@@ -1,9 +1,9 @@
 {
-  "name": "vscode-snowsql-formatter",
+  "name": "vscode-snowsql-formatter-with-py",
   "displayName": "SQL Formatter",
   "description": "Format sql files using the sql-formatter npm package",
-  "version": "1.4.4",
-  "publisher": "dwstern-snowflake-security",
+  "version": "1.4.5",
+  "publisher": "davmash",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Snowflake-Labs/snowsql-formatter.git"
@@ -22,7 +22,8 @@
     "pl/sql"
   ],
   "activationEvents": [
-    "onLanguage:sql"
+    "onLanguage:sql",
+    "onLanguage:py"
   ],
   "contributes": {
     "configuration": {
