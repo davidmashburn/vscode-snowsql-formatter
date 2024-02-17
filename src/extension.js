@@ -23,48 +23,29 @@ const getConfig = ({ insertSpaces, tabSize }) => ({
 
 const format = (text, config) => sqlFormatter.format(text, config);
 
-const isPyLine = trimmed_line => {
-	return (
-		trimmed_line.startsWith('#') ||
-		trimmed_line.startsWith(';"""') ||
-		trimmed_line.startsWith(";'''") ||
-		trimmed_line.endsWith('"""--sql') ||
-		trimmed_line.endsWith("'''--sql")
-	);
-};
-
-const commentPyToSql = text => {
-	const lines = text.split('\n');
-
-	for (let i = 0; i < lines.length; i++) {
-		if (isPyLine(lines[i].trim())) {
-			lines[i] = '-- ' + lines[i];
-		}
-	}
-
-	return lines.join('\n');
-};
-
-const revertSqlToPy = text => {
-	const lines = text.split('\n');
-
-	for (let i = 0; i < lines.length; i++) {
-		if (!lines[i].startsWith('-- ')) {
-			continue;
-		}
-		if (isPyLine(lines[i].slice(3).trim())) {
-			lines[i] = lines[i].slice(0, 3);
-		}
-	}
-
-	return lines.join('\n');
-};
-
 const formatPy = (text, config) => {
-	const commentedPy = commentPyToSql(text);
-	const formattedSql = sqlFormatter.format(commentedPy, config);
-	const formattedPy = revertSqlToPy(formattedSql);
-	return ["text", text, "commentedPy", commentedPy, "formattedSql", formattedSql, "formattedPy", formattedPy].join('\n\n');
+	let outputLines = [];
+	const lines = text.split('\n');
+	let isSql = false;
+	let sqlLines = [];
+
+	for (let i = 0; i < lines.length; i++) {
+		if (lines[i].trim().endsWith('"""--sql')) {
+			isSql = true;
+			outputLines.push(lines[i]);
+			sqlLines = [];
+		} else if ( lines[i].trim().startsWith(';"""') ) {
+			isSql = false;
+			outputLines.push(format(sqlLines.join("\n")))
+			outputLines.push(lines[i])
+		} else if ( isSql ) {
+			sqlLines.push(lines[i]);
+		} else {
+			outputLines.push(lines[i]);
+		}
+	}
+
+	return outputLines.join('\n');
 };
 
 module.exports.activate = () => {
