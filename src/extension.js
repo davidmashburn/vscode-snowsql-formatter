@@ -23,41 +23,37 @@ const getConfig = ({ insertSpaces, tabSize }) => ({
 
 const format = (text, config) => sqlFormatter.format(text, config);
 
-const commentPyToSql = (text) => {
+const isPyLine = trimmed_line => {
+	return (
+		trimmed_line.startsWith('#') ||
+		trimmed_line.startsWith(';"""') ||
+		trimmed_line.startsWith(";'''") ||
+		trimmed_line.endsWith('"""--sql') ||
+		trimmed_line.endsWith("'''--sql")
+	);
+};
+
+const commentPyToSql = text => {
 	const lines = text.split('\n');
-	const patterns = [
-		/^\s*#/,        // Match lines starting with any whitespace followed by a #
-		/^;"""/,        // Match lines starting with ;"""
-		/"""\s*--sql$/ // Match lines ending with """--sql
-	];
 
 	for (let i = 0; i < lines.length; i++) {
-		for (let pattern of patterns) {
-			if (pattern.test(lines[i])) {
-				lines[i] = '-- ' + lines[i];
-				break;
-			}
+		if (isPyLine(lines[i].trim())) {
+			lines[i] = '-- ' + lines[i];
 		}
 	}
 
 	return lines.join('\n');
-
 };
 
-const revertSqlToPy = (text) => {
+const revertSqlToPy = text => {
 	const lines = text.split('\n');
-	const patterns = [
-		/^\s-- *#/,        // Match lines starting with any whitespace followed by a #
-		/^-- ;"""/,        // Match lines starting with ;"""
-		/"""\s-- *--sql$/ // Match lines ending with """--sql
-	];
 
 	for (let i = 0; i < lines.length; i++) {
-		for (let pattern of patterns) {
-			if (pattern.test(lines[i])) {
-				lines[i] = '-- ' + lines[i];
-				break;
-			}
+		if (!lines[i].startsWith('-- ')) {
+			continue;
+		}
+		if (isPyLine(lines[i].slice(3).trim())) {
+			lines[i] = lines[i].slice(0, 3);
 		}
 	}
 
@@ -65,19 +61,21 @@ const revertSqlToPy = (text) => {
 };
 
 const formatPy = (text, config) => {
-	commentedPy = commentPyToSql(text)
-	formattedSql = sqlFormatter.format(commentedPy, config);
-	formattedPy = revertSqlToPy(formattedSql)
+	const commentedPy = commentPyToSql(text);
+	const formattedSql = sqlFormatter.format(commentedPy, config);
+	const formattedPy = revertSqlToPy(formattedSql);
+	return ["text", text, "commentedPy", commentedPy, "formattedSql", formattedSql, "formattedPy", formattedPy].join('\n\n');
 };
 
-module.exports.activate = () =>
+module.exports.activate = () => {
+	vscode.languages.registerDocumentRangeFormattingEditProvider('python', {
+		provideDocumentRangeFormattingEdits: (document, range, options) => [
+			vscode.TextEdit.replace(range, formatPy(document.getText(range), getConfig(options)))
+		]
+	});
 	vscode.languages.registerDocumentRangeFormattingEditProvider('sql', {
 		provideDocumentRangeFormattingEdits: (document, range, options) => [
 			vscode.TextEdit.replace(range, format(document.getText(range), getConfig(options)))
 		]
 	});
-vscode.languages.registerDocumentRangeFormattingEditProvider('py', {
-	provideDocumentRangeFormattingEdits: (document, range, options) => [
-		vscode.TextEdit.replace(range, formatPy(document.getText(range), getConfig(options)))
-	]
-});
+};
