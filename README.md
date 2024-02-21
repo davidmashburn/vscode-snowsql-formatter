@@ -22,7 +22,8 @@ yarn install
 vsce login
 
 # Build a vscode plugin
-vsce package
+# vsce package
+vsce package --yarn --skip-license; code --force --install-extension vscode-snowsql-formatter-with-py-1.4.5.vsix
 ```
 
 ### Install VSIX into VS Code
