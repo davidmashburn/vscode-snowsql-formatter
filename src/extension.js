@@ -28,20 +28,25 @@ const formatPy = (text, config) => {
 	const lines = text.split('\n');
 	let isSql = false;
 	let sqlLines = [];
+	let sqlIndentation = '';
 
 	for (let i = 0; i < lines.length; i++) {
-		if (lines[i].trim().endsWith('"""--sql')) {
-			isSql = true;
-			outputLines.push(lines[i]);
+		const line = lines[i];
+		if (line.trim().endsWith('"""--sql')) {
+			outputLines.push(line);
 			sqlLines = [];
-		} else if ( lines[i].trim().startsWith(';"""') ) {
+			sqlIndentation = ' '.repeat(line.length - line.trimLeft().length);
+			isSql = true;
+		} else if (line.trim().startsWith(';"""')) {
+			outputLines.push(
+				sqlIndentation + format(sqlLines.join('\n')).replaceAll('\n', '\n' + sqlIndentation)
+			);
+			outputLines.push(sqlIndentation + line.trim());
 			isSql = false;
-			outputLines.push(format(sqlLines.join("\n")))
-			outputLines.push(lines[i])
-		} else if ( isSql ) {
-			sqlLines.push(lines[i]);
+		} else if (isSql) {
+			sqlLines.push(line);
 		} else {
-			outputLines.push(lines[i]);
+			outputLines.push(line);
 		}
 	}
 
