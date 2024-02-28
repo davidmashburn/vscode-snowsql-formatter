@@ -23,8 +23,29 @@ const getConfig = ({ insertSpaces, tabSize }) => ({
 
 const format = (text, config) => sqlFormatter.format(text, config);
 
+const removeSpacesInsideCurly = (text) => {
+	let output = '';
+	let inBrackets = false;
+
+	for (const char of text) {
+		if (char === '{') {
+			inBrackets = true;
+		} else if (char === '}') {
+			inBrackets = false;
+		}
+
+		if (inBrackets && char === ' ') {
+			continue;
+		}
+		output += char;
+	}
+
+	return output;
+};
+
+
 const formatPy = (text, config) => {
-	let outputLines = [];
+	const outputLines = [];
 	const lines = text.split('\n');
 	let isSql = false;
 	let sqlLines = [];
@@ -38,9 +59,10 @@ const formatPy = (text, config) => {
 			sqlIndentation = ' '.repeat(line.length - line.trimLeft().length);
 			isSql = true;
 		} else if (line.trim().startsWith(';"""')) {
-			outputLines.push(
-				sqlIndentation + format(sqlLines.join('\n')).replaceAll('\n', '\n' + sqlIndentation)
-			);
+			const formattedSql = format(sqlLines.join('\n'), config);
+			const indentedSql = sqlIndentation + formattedSql.replaceAll('\n', '\n' + sqlIndentation);
+			const correctedSql = removeSpacesInsideCurly(indentedSql);
+			outputLines.push(correctedSql);
 			outputLines.push(sqlIndentation + line.trim());
 			isSql = false;
 		} else if (isSql) {
