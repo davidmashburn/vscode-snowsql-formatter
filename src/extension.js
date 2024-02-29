@@ -21,7 +21,29 @@ const getConfig = ({ insertSpaces, tabSize }) => ({
 	linesBetweenQueries: getSetting('sql-formatter', 'linesBetweenQueries', 2)
 });
 
-const format = (text, config) => sqlFormatter.format(text, config);
+
+const indentLinesWithOn = (text) => {
+	const inputLines = text.split('\n')
+	const outputLines = [];
+	for (const inputLine of inputLines) {
+		const spacesAtStart = inputLine.length - inputLine.trimLeft().length
+		const index = inputLine.toUpperCase().indexOf(" ON ");
+		if (index !== -1) {
+			const firstPart = inputLine.substring(0, index);
+			const secondPart = inputLine.substring(index);
+			const indentedSecondPart = " ".repeat(spacesAtStart + 1) + secondPart;
+			outputLines.push(firstPart, indentedSecondPart);
+		} else {
+			outputLines.push(inputLine);
+		}
+	}
+	return outputLines.join("\n")
+};
+
+const format = (text, config) => {
+	const formattedSql = sqlFormatter.format(text, config);
+	return indentLinesWithOn(formattedSql)
+};
 
 const removeSpacesInsideCurly = (text) => {
 	let output = '';
