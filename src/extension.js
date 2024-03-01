@@ -21,6 +21,13 @@ const getConfig = ({ insertSpaces, tabSize }) => ({
 	linesBetweenQueries: getSetting('sql-formatter', 'linesBetweenQueries', 2)
 });
 
+const getConfigPy = (_) => ({
+	indent: '  ', // default to two spaces in Python, ignore editor setting (which is usually 4 spaces)
+	language: getSetting('sql-formatter', 'dialect', 'sql'),
+	uppercase: getSetting('sql-formatter', 'uppercase', false),
+	linesBetweenQueries: getSetting('sql-formatter', 'linesBetweenQueries', 2)
+});
+
 
 const indentLinesWithOn = (text) => {
 	const inputLines = text.split('\n')
@@ -100,7 +107,7 @@ const formatPy = (text, config) => {
 module.exports.activate = () => {
 	vscode.languages.registerDocumentRangeFormattingEditProvider('python', {
 		provideDocumentRangeFormattingEdits: (document, range, options) => [
-			vscode.TextEdit.replace(range, formatPy(document.getText(range), getConfig(options)))
+			vscode.TextEdit.replace(range, formatPy(document.getText(range), getConfigPy(options)))
 		]
 	});
 	vscode.languages.registerDocumentRangeFormattingEditProvider('sql', {
