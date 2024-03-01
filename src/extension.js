@@ -49,7 +49,9 @@ const indentLinesWithOn = (text) => {
 
 const format = (text, config) => {
 	const formattedSql = sqlFormatter.format(text, config);
-	return indentLinesWithOn(formattedSql)
+	const indentedOnSQL = indentLinesWithOn(formattedSql);
+	const correctedSql = indentedOnSQL.replaceAll("= >", "=>");
+	return correctedSql;
 };
 
 const removeSpacesInsideCurly = (text) => {
